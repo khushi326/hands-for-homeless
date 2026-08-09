@@ -1,10 +1,9 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, g
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
-
-# Load environment variables
+from auth_middleware import require_auth
 load_dotenv()
 
 app = Flask(__name__)
@@ -30,6 +29,15 @@ def health_check():
         "status": "healthy",
         "message": "Hands For Homeless API is running.",
         "supabase_connected": supabase is not None
+    }), 200
+
+@app.route('/api/protected-health', methods=['GET'])
+@require_auth
+def protected_health_check():
+    return jsonify({
+        "status": "healthy",
+        "message": "Access granted to secure endpoint.",
+        "user_claims": g.user
     }), 200
 
 if __name__ == '__main__':
