@@ -148,3 +148,100 @@ export async function createDonation(data: any, token: string) {
   return res.json();
 }
 
+// ---- Admin Module ----
+
+export async function fetchAdminStats(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/admin/stats`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch admin stats');
+  }
+  return res.json();
+}
+
+export async function fetchAllUsers(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/admin/users`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch users');
+  }
+  return res.json();
+}
+
+export async function updateUserRole(userId: string, role: string, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ role })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update role');
+  }
+  return res.json();
+}
+
+export async function fetchAllCases(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/admin/cases`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch cases');
+  }
+  return res.json();
+}
+
+export async function updateCaseStatus(caseId: string, status: string, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/admin/cases/${caseId}/status`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update case status');
+  }
+  return res.json();
+}
+
+export async function fetchAllDonations(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/admin/donations`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch donations');
+  }
+  return res.json();
+}
+
+export async function createCampaign(data: { title: string; description: string; target_amount: number }, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/admin/campaigns`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create campaign');
+  }
+  return res.json();
+}
+
+export async function updateCampaign(campaignId: string, data: any, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/admin/campaigns/${campaignId}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update campaign');
+  }
+  return res.json();
+}

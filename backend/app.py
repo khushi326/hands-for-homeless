@@ -350,6 +350,185 @@ def create_donation():
         print(f"Error creating donation: {e}")
         return jsonify({"error": str(e)}), 500
 
+# =======================================
+# 6. Admin Endpoints
+# =======================================
+
+def require_admin(f):
+    """Decorator that checks if user has admin role in profiles table."""
+    from functools import wraps
+    @wraps(f)
+    @require_auth
+    def decorated(*args, **kwargs):
+        if not supabase:
+            return jsonify({"error": "Supabase client not initialized"}), 500
+        try:
+            profile = supabase.table("profiles") \
+                .select("role") \
+                .eq("id", g.user["sub"]) \
+                .execute()
+            if not profile.data or profile.data[0].get("role") != "admin":
+                return jsonify({"error": "Admin access required"}), 403
+        except Exception as e:
+            return jsonify({"error": f"Auth check failed: {str(e)}"}), 500
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/api/admin/stats', methods=['GET'])
+@require_admin
+def admin_stats():
+    try:
+        users = supabase.table("profiles").select("id", count="exact").execute()
+        cases = supabase.table("cases").select("id", count="exact").execute()
+        donations = supabase.table("donations").select("amount").execute()
+        requests = supabase.table("assistance_requests").select("id", count="exact").execute()
+        campaigns = supabase.table("campaigns").select("id", count="exact").eq("status", "active").execute()
+
+        total_donated = sum(float(d.get("amount", 0) or 0) for d in donations.data)
+
+        return jsonify({
+            "total_users": users.count or 0,
+            "total_cases": cases.count or 0,
+            "total_donations_amount": total_donated,
+            "total_donations_count": len(donations.data),
+            "total_requests": requests.count or 0,
+            "active_campaigns": campaigns.count or 0,
+        }), 200
+    except Exception as e:
+        print(f"Error fetching admin stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users', methods=['GET'])
+@require_admin
+def admin_get_users():
+    try:
+        res = supabase.table("profiles") \
+            .select("*") \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching users: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users/<user_id>/role', methods=['PUT'])
+@require_admin
+def admin_update_role(user_id):
+    try:
+        data = request.json
+        new_role = data.get("role")
+        if new_role not in ["citizen", "volunteer", "ngo", "admin"]:
+            return jsonify({"error": "Invalid role"}), 400
+
+        res = supabase.table("profiles") \
+            .update({"role": new_role}) \
+            .eq("id", user_id) \
+            .execute()
+        return jsonify({"message": "Role updated", "data": res.data}), 200
+    except Exception as e:
+        print(f"Error updating role: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/cases', methods=['GET'])
+@require_admin
+def admin_get_cases():
+    try:
+        res = supabase.table("cases") \
+            .select("*") \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching all cases: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/cases/<case_id>/status', methods=['PUT'])
+@require_admin
+def admin_update_case_status(case_id):
+    try:
+        data = request.json
+        new_status = data.get("status")
+        if new_status not in ["pending", "assigned", "in_progress", "resolved", "closed"]:
+            return jsonify({"error": "Invalid status"}), 400
+
+        res = supabase.table("cases") \
+            .update({"status": new_status}) \
+            .eq("id", case_id) \
+            .execute()
+        return jsonify({"message": "Case status updated", "data": res.data}), 200
+    except Exception as e:
+        print(f"Error updating case status: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/donations', methods=['GET'])
+@require_admin
+def admin_get_donations():
+    try:
+        res = supabase.table("donations") \
+            .select("*") \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching all donations: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/campaigns', methods=['POST'])
+@require_admin
+def admin_create_campaign():
+    try:
+        data = request.json
+        title = data.get("title")
+        description = data.get("description", "")
+        target_amount = data.get("target_amount")
+
+        if not title or not target_amount:
+            return jsonify({"error": "Title and target_amount are required"}), 400
+
+        campaign_data = {
+            "title": title,
+            "description": description,
+            "target_amount": float(target_amount),
+            "current_amount": 0,
+            "status": "active"
+        }
+        res = supabase.table("campaigns").insert(campaign_data).execute()
+
+        if len(res.data) == 0:
+            return jsonify({"error": "Failed to create campaign"}), 500
+        return jsonify(res.data[0]), 201
+    except Exception as e:
+        print(f"Error creating campaign: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/campaigns/<campaign_id>', methods=['PUT'])
+@require_admin
+def admin_update_campaign(campaign_id):
+    try:
+        data = request.json
+        update_data = {}
+        if "title" in data:
+            update_data["title"] = data["title"]
+        if "description" in data:
+            update_data["description"] = data["description"]
+        if "target_amount" in data:
+            update_data["target_amount"] = float(data["target_amount"])
+        if "status" in data:
+            update_data["status"] = data["status"]
+
+        if not update_data:
+            return jsonify({"error": "No fields to update"}), 400
+
+        res = supabase.table("campaigns") \
+            .update(update_data) \
+            .eq("id", campaign_id) \
+            .execute()
+        return jsonify({"message": "Campaign updated", "data": res.data}), 200
+    except Exception as e:
+        print(f"Error updating campaign: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv("FLASK_ENV") == "development")
+
