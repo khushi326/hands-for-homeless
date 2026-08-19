@@ -183,6 +183,173 @@ def get_my_donations():
         print(f"Error fetching donations: {e}")
         return jsonify({"error": str(e)}), 500
 
+# =======================================
+# 4. Volunteer Endpoints
+# =======================================
+
+@app.route('/api/volunteer/available-cases', methods=['GET'])
+@require_auth
+def get_available_cases():
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        res = supabase.table("cases") \
+            .select("*") \
+            .in_("status", ["pending", "assigned"]) \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching available cases: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/volunteer/accept-case', methods=['POST'])
+@require_auth
+def accept_case():
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        data = request.json
+        case_id = data.get("case_id")
+        if not case_id:
+            return jsonify({"error": "case_id is required"}), 400
+
+        assignment_data = {
+            "case_id": case_id,
+            "volunteer_id": g.user["sub"],
+            "status": "accepted"
+        }
+        res = supabase.table("case_assignments").insert(assignment_data).execute()
+
+        # Update case status to assigned
+        supabase.table("cases").update({"status": "assigned"}).eq("id", case_id).execute()
+
+        if len(res.data) == 0:
+            return jsonify({"error": "Failed to create assignment"}), 500
+        return jsonify(res.data[0]), 201
+    except Exception as e:
+        print(f"Error accepting case: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/volunteer/my-assignments', methods=['GET'])
+@require_auth
+def get_my_assignments():
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        res = supabase.table("case_assignments") \
+            .select("*, cases(*)") \
+            .eq("volunteer_id", g.user["sub"]) \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching assignments: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/volunteer/update-assignment/<assignment_id>', methods=['PUT'])
+@require_auth
+def update_assignment(assignment_id):
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        data = request.json
+        new_status = data.get("status")
+        notes = data.get("notes", "")
+
+        if new_status not in ["accepted", "in_progress", "completed", "cancelled"]:
+            return jsonify({"error": "Invalid status value"}), 400
+
+        update_data = {"status": new_status}
+        if notes:
+            update_data["notes"] = notes
+
+        res = supabase.table("case_assignments") \
+            .update(update_data) \
+            .eq("id", assignment_id) \
+            .eq("volunteer_id", g.user["sub"]) \
+            .execute()
+
+        # If completed, also update the case status
+        if new_status == "completed":
+            assignment = supabase.table("case_assignments") \
+                .select("case_id") \
+                .eq("id", assignment_id) \
+                .execute()
+            if assignment.data:
+                supabase.table("cases") \
+                    .update({"status": "resolved"}) \
+                    .eq("id", assignment.data[0]["case_id"]) \
+                    .execute()
+
+        return jsonify({"message": "Assignment updated", "data": res.data}), 200
+    except Exception as e:
+        print(f"Error updating assignment: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# =======================================
+# 5. Campaign & Donation Endpoints
+# =======================================
+
+@app.route('/api/campaigns', methods=['GET'])
+def get_campaigns():
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        res = supabase.table("campaigns") \
+            .select("*") \
+            .eq("status", "active") \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify(res.data), 200
+    except Exception as e:
+        print(f"Error fetching campaigns: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/donations', methods=['POST'])
+@require_auth
+def create_donation():
+    if not supabase:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    try:
+        data = request.json
+        donation_type = data.get("donation_type")
+
+        if donation_type not in ["monetary", "item"]:
+            return jsonify({"error": "donation_type must be 'monetary' or 'item'"}), 400
+
+        donation_data = {
+            "donor_id": g.user["sub"],
+            "donation_type": donation_type,
+            "status": "pending"
+        }
+
+        if donation_type == "monetary":
+            amount = data.get("amount")
+            if not amount:
+                return jsonify({"error": "amount is required for monetary donations"}), 400
+            donation_data["amount"] = float(amount)
+            campaign_id = data.get("campaign_id")
+            if campaign_id:
+                donation_data["campaign_id"] = campaign_id
+        else:
+            item_name = data.get("item_name")
+            if not item_name:
+                return jsonify({"error": "item_name is required for item donations"}), 400
+            donation_data["item_name"] = item_name
+            donation_data["item_category"] = data.get("item_category", "other")
+            donation_data["item_quantity"] = int(data.get("item_quantity", 1))
+            donation_data["pickup_address"] = data.get("pickup_address")
+
+        res = supabase.table("donations").insert(donation_data).execute()
+
+        if len(res.data) == 0:
+            return jsonify({"error": "Failed to create donation"}), 500
+        return jsonify(res.data[0]), 201
+    except Exception as e:
+        print(f"Error creating donation: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv("FLASK_ENV") == "development")

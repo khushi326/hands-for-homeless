@@ -72,3 +72,79 @@ export async function fetchMyDonations(token: string) {
   }
   return res.json();
 }
+
+// ---- Volunteer Module ----
+
+export async function fetchAvailableCases(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/volunteer/available-cases`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch available cases');
+  }
+  return res.json();
+}
+
+export async function acceptCase(caseId: string, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/volunteer/accept-case`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ case_id: caseId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to accept case');
+  }
+  return res.json();
+}
+
+export async function fetchMyAssignments(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/volunteer/my-assignments`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch assignments');
+  }
+  return res.json();
+}
+
+export async function updateAssignment(assignmentId: string, data: { status: string; notes?: string }, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/volunteer/update-assignment/${assignmentId}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update assignment');
+  }
+  return res.json();
+}
+
+// ---- Campaigns & Donations ----
+
+export async function fetchCampaigns() {
+  const res = await fetch(`${API_BASE_URL}/campaigns`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch campaigns');
+  }
+  return res.json();
+}
+
+export async function createDonation(data: any, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/donations`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create donation');
+  }
+  return res.json();
+}
+
