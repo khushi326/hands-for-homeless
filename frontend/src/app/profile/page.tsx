@@ -32,18 +32,37 @@ export default function Profile() {
     setStatusMsg({ type: '', text: '' });
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      const token = localStorage.getItem('hf_access_token');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      
+      const res = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
           full_name: fullName,
           phone_number: phoneNumber || null,
         })
-        .eq('id', user.id);
+      });
+      
+      const data = await res.json();
 
-      if (error) {
-        setStatusMsg({ type: 'error', text: error.message || 'Failed to update profile.' });
+      if (!res.ok) {
+        setStatusMsg({ type: 'error', text: data.error || 'Failed to update profile.' });
       } else {
         setStatusMsg({ type: 'success', text: 'Profile updated successfully!' });
+        
+        // Update local storage user
+        const storedUser = localStorage.getItem('hf_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          parsed.full_name = fullName;
+          parsed.phone_number = phoneNumber || null;
+          localStorage.setItem('hf_user', JSON.stringify(parsed));
+        }
+        
         await refreshProfile();
       }
     } catch (err: any) {

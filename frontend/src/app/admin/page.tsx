@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const navLinks = [
     { label: 'User Management', desc: 'View all users, change roles', href: '/admin/users', icon: Users, color: 'border-blue-500/20 hover:border-blue-500' },
     { label: 'Case Management', desc: 'View all cases, update status', href: '/admin/cases', icon: FileText, color: 'border-amber-500/20 hover:border-amber-500' },
+    { label: 'Requests Management', desc: 'View assistance requests', href: '/admin/requests', icon: ClipboardList, color: 'border-purple-500/20 hover:border-purple-500' },
     { label: 'Campaign Management', desc: 'Create & manage campaigns', href: '/admin/campaigns', icon: Megaphone, color: 'border-rose-500/20 hover:border-rose-500' },
   ];
 

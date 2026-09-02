@@ -1,27 +1,16 @@
 import os
 import uuid
-from supabase import create_client, Client
 
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-
-def get_supabase_client() -> Client:
-    if not supabase_url or not supabase_key:
-        raise ValueError("Supabase credentials are missing from environment.")
-    return create_client(supabase_url, supabase_key)
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def upload_case_photo(file_bytes: bytes, file_name: str, content_type: str) -> str:
     """
-    Uploads file bytes to Supabase Storage bucket 'case-photos'
-    and returns the public URL of the uploaded image.
+    Uploads file bytes locally to static/uploads directory
+    and returns the public URL path.
     """
-    client = get_supabase_client()
-    bucket_id = "case-photos"
-    
-    # Generate a unique path to avoid collisions
     ext = os.path.splitext(file_name)[1]
     if not ext:
-        # Fallback based on content type
         if 'png' in content_type:
             ext = '.png'
         elif 'gif' in content_type:
@@ -30,18 +19,16 @@ def upload_case_photo(file_bytes: bytes, file_name: str, content_type: str) -> s
             ext = '.jpg'
             
     unique_name = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(UPLOAD_FOLDER, unique_name)
     
     try:
-        # Upload using Supabase storage client
-        client.storage.from_(bucket_id).upload(
-            path=unique_name,
-            file=file_bytes,
-            file_options={"content-type": content_type}
-        )
+        with open(file_path, 'wb') as f:
+            f.write(file_bytes)
         
-        # Retrieve the public url
-        public_url = client.storage.from_(bucket_id).get_public_url(unique_name)
+        # In a real app this would point to the domain, for local testing just return path
+        # Assuming frontend runs on different port or same, Next.js can serve it from backend URL
+        public_url = f"http://localhost:5001/static/uploads/{unique_name}"
         return public_url
     except Exception as e:
-        print(f"Failed to upload photo to Supabase storage: {e}")
+        print(f"Failed to upload photo locally: {e}")
         raise e

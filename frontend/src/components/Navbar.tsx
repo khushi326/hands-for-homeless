@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, Heart, User as UserIcon, LogOut, Compass } from 'lucide-react';
+import { Menu, X, Heart, User as UserIcon, LogOut, Compass, Shield, MapPin } from 'lucide-react';
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
@@ -33,8 +33,8 @@ export default function Navbar() {
           {/* Logo Section */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-                <Heart className="w-5 h-5 text-white" />
+              <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-105">
+                <img src="/logo.jpeg" alt="HFH Logo" className="w-full h-full object-contain rounded-full" />
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-bold tracking-tight text-foreground leading-tight">
@@ -68,25 +68,53 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-3">
-                <Link
-                  href="/profile"
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-border/20 transition-all"
-                >
-                  <UserIcon className="w-4 h-4 text-primary" />
-                  <span className="max-w-[120px] truncate">
-                    {profile?.full_name || user.email}
-                  </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary capitalize">
-                    {profile?.role || 'citizen'}
-                  </span>
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="p-2 rounded-lg text-muted hover:text-primary hover:bg-primary/5 transition-all"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                {/* Profile Dropdown */}
+                <div className="relative group">
+                  <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-border/20 transition-all focus:outline-none">
+                    <UserIcon className="w-4 h-4 text-primary" />
+                    <span className="max-w-[120px] truncate">
+                      {profile?.full_name || user.email}
+                    </span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary capitalize">
+                      {profile?.role || 'citizen'}
+                    </span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-1 w-56 bg-card border border-border/40 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right scale-95 group-hover:scale-100">
+                    <div className="p-2 space-y-1">
+                      <Link href="/dashboard" className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
+                        Citizen Dashboard
+                      </Link>
+                      
+                      {profile?.role === 'admin' && (
+                        <Link href="/admin" className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-rose-500/10 hover:text-rose-600 rounded-lg transition-colors">
+                          Admin Panel
+                        </Link>
+                      )}
+                      
+                      {profile?.role === 'volunteer' && (
+                        <Link href="/volunteer" className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-green-500/10 hover:text-green-600 rounded-lg transition-colors">
+                          Volunteer Dashboard
+                        </Link>
+                      )}
+                      
+                      <div className="h-px bg-border/40 my-1"></div>
+                      
+                      <Link href="/profile" className="block px-3 py-2.5 text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
+                        Profile Settings
+                      </Link>
+                      
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left flex items-center space-x-2 px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -140,12 +168,40 @@ export default function Navbar() {
               {user ? (
                 <>
                   <Link
+                    href="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center space-x-3 py-2 text-base font-medium text-primary"
+                  >
+                    <Compass className="w-5 h-5" />
+                    <span>User Dashboard</span>
+                  </Link>
+                  {profile?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-3 py-2 text-base font-medium text-rose-500"
+                    >
+                      <Shield className="w-5 h-5" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  )}
+                  {profile?.role === 'volunteer' && (
+                    <Link
+                      href="/volunteer"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-3 py-2 text-base font-medium text-green-500"
+                    >
+                      <Heart className="w-5 h-5" />
+                      <span>Volunteer Dashboard</span>
+                    </Link>
+                  )}
+                  <Link
                     href="/profile"
                     onClick={() => setIsOpen(false)}
                     className="flex items-center space-x-3 py-2 text-base font-medium text-foreground"
                   >
-                    <UserIcon className="w-5 h-5 text-primary" />
-                    <span>Profile ({profile?.full_name || user.email})</span>
+                    <UserIcon className="w-5 h-5 text-muted" />
+                    <span>My Profile</span>
                   </Link>
                   <button
                     onClick={() => {

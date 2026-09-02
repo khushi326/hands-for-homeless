@@ -154,6 +154,11 @@ export default function Dashboard() {
                   <div className="space-y-1 flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{c.description}</p>
                     <p className="text-xs text-muted flex items-center space-x-1"><MapPin className="w-3 h-3" /><span>{c.location_address}</span></p>
+                    {c.photo_url && (
+                      <div className="mt-2">
+                        <img src={c.photo_url} alt="Case photo" className="w-full max-w-[120px] h-auto rounded-lg border border-border/40 object-cover" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-3 shrink-0">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor[c.status] || 'bg-gray-500/10 text-gray-500'}`}>{c.status?.replace('_', ' ')}</span>

@@ -145,6 +145,11 @@ export default function VolunteerDashboard() {
                     <p className="text-sm font-semibold text-foreground truncate">{a.cases?.description || 'Case details loading...'}</p>
                     <p className="text-xs text-muted flex items-center space-x-1"><MapPin className="w-3 h-3" /><span>{a.cases?.location_address || '—'}</span></p>
                     {a.cases?.condition && <p className="text-xs text-muted">Condition: {a.cases.condition}</p>}
+                    {a.cases?.photo_url && (
+                      <div className="mt-2">
+                        <img src={a.cases.photo_url} alt="Case photo" className="w-full max-w-[120px] h-auto rounded-lg border border-border/40 object-cover" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-3 shrink-0">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor[a.status] || 'bg-gray-500/10 text-gray-500'}`}>{a.status?.replace('_', ' ')}</span>
@@ -168,6 +173,11 @@ export default function VolunteerDashboard() {
                   <p className="text-sm font-semibold text-foreground truncate">{c.description}</p>
                   <p className="text-xs text-muted flex items-center space-x-1"><MapPin className="w-3 h-3" /><span>{c.location_address}</span></p>
                   {c.condition && <p className="text-xs text-muted">Condition: {c.condition}</p>}
+                  {c.photo_url && (
+                    <div className="mt-2">
+                      <img src={c.photo_url} alt="Case photo" className="w-full max-w-[120px] h-auto rounded-lg border border-border/40 object-cover" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center space-x-3 shrink-0">
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor[c.status]}`}>{c.status}</span>

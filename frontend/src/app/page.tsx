@@ -43,42 +43,50 @@ export default function Home() {
     <div className="flex flex-col space-y-20 pb-20">
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-20 sm:py-32">
+      <section className="relative overflow-hidden bg-background pt-24 pb-32">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 opacity-50 blur-[120px] rounded-full -z-10 pointer-events-none" />
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center space-y-8 max-w-3xl mx-auto">
-            <span className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-wide uppercase">
-              <Heart className="w-3.5 h-3.5 fill-current" />
-              <span>Compassion in Action</span>
+          <div className="max-w-3xl mx-auto text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+            
+            <span className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-wide uppercase border border-primary/20 shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              <span>Live Humanitarian Platform</span>
             </span>
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground leading-tight">
-              Helping Hands,<br />
-              <span className="bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent">
-                Hopeful Hearts
+            
+            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-foreground leading-[1.1]">
+              Empowering <br />
+              <span className="bg-gradient-to-r from-primary via-teal-400 to-amber-500 bg-clip-text text-transparent">
+                Communities
               </span>
             </h1>
-            <p className="text-lg text-muted max-w-2xl mx-auto leading-relaxed">
-              Hands For Homeless (HFH) is a humanitarian digital platform developed to connect homeless individuals with volunteers, donors, and support organizations. Together, we can rebuild lives.
+            
+            <p className="text-lg text-muted max-w-2xl mx-auto leading-relaxed font-medium">
+              Hands For Homeless (HFH) is a full-stack humanitarian ecosystem. Report cases, and coordinate volunteer efforts in real-time.
             </p>
+            
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
               <Link
                 href="/register"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-primary text-white font-medium hover:bg-primary-hover shadow-xl shadow-primary/25 hover:shadow-primary/35 transition-all text-center flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-hover shadow-[0_0_40px_-10px_rgba(var(--primary),0.5)] hover:shadow-[0_0_60px_-15px_rgba(var(--primary),0.7)] hover:-translate-y-1 transition-all text-center flex items-center justify-center space-x-2"
               >
                 <span>Get Started</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href="/about"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl border border-border/80 text-foreground font-medium hover:bg-card hover:border-foreground/20 transition-all text-center"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl border-2 border-border/80 text-foreground font-bold hover:bg-card hover:border-primary/50 hover:text-primary transition-all text-center flex items-center justify-center space-x-2"
               >
-                Learn More
+                <span>Learn More</span>
               </Link>
             </div>
+
           </div>
         </div>
-        
-        {/* Background Decorative Blur */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10" />
       </section>
 
       {/* Stats Section */}

@@ -57,3 +57,8 @@ pip-delete-this-directory.txt
 
 # Supabase local config (if any)
 .supabase/
+
+# Local databases
+*.db
+backend/database.db
+

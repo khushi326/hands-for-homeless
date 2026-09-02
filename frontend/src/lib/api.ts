@@ -245,3 +245,21 @@ export async function updateCampaign(campaignId: string, data: any, token: strin
   }
   return res.json();
 }
+
+export async function fetchAdminRequests(token: string) {
+  const headers = await getHeaders(token);
+  const res = await fetch(`${API_BASE_URL}/admin/requests`, { headers });
+  if (!res.ok) throw new Error('Failed to fetch requests');
+  return res.json();
+}
+
+export async function updateAdminRequestStatus(reqId: string, status: string, token: string) {
+  const headers = await getHeaders(token, true);
+  const res = await fetch(`${API_BASE_URL}/admin/requests/${reqId}/status`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) throw new Error('Failed to update status');
+  return res.json();
+}
