@@ -13,6 +13,16 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        "name": "Hands For Homeless API",
+        "status": "online",
+        "version": "1.0.0",
+        "database": "Supabase PostgreSQL (Mumbai Region)",
+        "frontend": "https://hands-for-homeless.vercel.app"
+    }), 200
+
 # =======================================
 # 0. Auth Endpoints
 # =======================================
