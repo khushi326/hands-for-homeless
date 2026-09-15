@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { fetchAvailableCases, acceptCase, fetchMyAssignments } from '@/lib/api';
-import { RefreshCw, MapPin, CheckCircle2, Clock, AlertCircle, Users, ClipboardList, ArrowRight, Shield } from 'lucide-react';
+import { RefreshCw, MapPin, CheckCircle2, Clock, AlertCircle, Users, ClipboardList, ArrowRight, Shield, User, LogOut, Play, Check } from 'lucide-react';
+import { updateAssignment } from '@/lib/api';
 
 const statusColor: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-600',
@@ -18,15 +19,21 @@ const statusColor: Record<string, string> = {
 };
 
 export default function VolunteerDashboard() {
-  const { user, profile, session, loading: authLoading } = useAuth();
+  const { user, profile, session, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const [availableCases, setAvailableCases] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState<'assignments' | 'available'>('assignments');
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -69,6 +76,22 @@ export default function VolunteerDashboard() {
     }
   };
 
+  const handleQuickStatusUpdate = async (assignmentId: string, newStatus: string) => {
+    if (!session?.access_token) return;
+    setUpdatingId(assignmentId);
+    setError('');
+    setSuccess('');
+    try {
+      await updateAssignment(assignmentId, { status: newStatus }, session.access_token);
+      setSuccess(`Assignment status updated to "${newStatus.replace('_', ' ')}"!`);
+      await loadData();
+    } catch (e: any) {
+      setError(e.message || 'Failed to update assignment status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   if (authLoading || !user) {
     return <div className="min-h-[70vh] flex items-center justify-center"><RefreshCw className="w-6 h-6 text-primary animate-spin" /></div>;
   }
@@ -80,14 +103,34 @@ export default function VolunteerDashboard() {
     <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 space-y-10">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-primary/10 border border-blue-500/10 rounded-3xl p-8 sm:p-10">
-        <div className="flex items-center space-x-3 mb-2">
-          <Shield className="w-7 h-7 text-blue-500" />
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Volunteer Dashboard</h1>
+      <div className="bg-gradient-to-r from-blue-500/10 via-background to-primary/10 border border-blue-500/20 rounded-3xl p-8 sm:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 shadow-xl shadow-foreground/[0.005]">
+        <div>
+          <div className="flex items-center space-x-3 mb-2">
+            <Shield className="w-7 h-7 text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Volunteer Dashboard</h1>
+          </div>
+          <p className="text-sm text-muted">
+            Welcome, <span className="font-semibold text-foreground">{profile?.full_name || 'Volunteer'}</span> &mdash; Accept cases, attend assignments, and update status.
+          </p>
         </div>
-        <p className="text-sm text-muted">
-          Welcome, <span className="font-semibold text-foreground">{profile?.full_name || 'Volunteer'}</span> &mdash; Accept cases, help those in need, and make an impact.
-        </p>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/profile"
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl border border-border/80 bg-card hover:bg-border/20 text-sm font-semibold text-foreground transition-all shadow-sm"
+          >
+            <User className="w-4 h-4 text-blue-500" />
+            <span>My Profile</span>
+          </Link>
+
+          <button
+            onClick={handleSignOut}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-sm font-semibold text-red-500 transition-all shadow-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -157,10 +200,36 @@ export default function VolunteerDashboard() {
                   </div>
                 </div>
                 {a.status !== 'completed' && a.status !== 'cancelled' && (
-                  <Link href={`/volunteer/assignments?id=${a.id}`}
-                    className="inline-flex items-center space-x-1.5 text-xs font-semibold text-primary hover:text-primary-hover">
-                    <span>Update Status</span><ArrowRight className="w-3 h-3" />
-                  </Link>
+                  <div className="pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {a.status === 'accepted' && (
+                        <button
+                          onClick={() => handleQuickStatusUpdate(a.id, 'in_progress')}
+                          disabled={updatingId === a.id}
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 text-xs font-semibold transition-all disabled:opacity-50"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>{updatingId === a.id ? 'Updating...' : 'Start (In Progress)'}</span>
+                        </button>
+                      )}
+
+                      {a.status === 'in_progress' && (
+                        <button
+                          onClick={() => handleQuickStatusUpdate(a.id, 'completed')}
+                          disabled={updatingId === a.id}
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20 text-xs font-semibold transition-all disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{updatingId === a.id ? 'Completing...' : 'Mark Resolved / Completed'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <Link href={`/volunteer/assignments?id=${a.id}`}
+                      className="inline-flex items-center space-x-1 text-xs font-semibold text-primary hover:text-primary-hover">
+                      <span>Full Case Details & Notes</span><ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
                 )}
               </div>
             ))

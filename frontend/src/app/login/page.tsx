@@ -17,10 +17,16 @@ function LoginForm() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getRedirectPath = (role?: string) => {
+    if (role === 'admin') return '/admin';
+    if (role === 'volunteer') return '/volunteer';
+    return '/dashboard';
+  };
+
   useEffect(() => {
-    // If user is already logged in, redirect to profile dashboard
+    // If user is already logged in, redirect to role-specific dashboard
     if (user) {
-      router.push('/profile');
+      router.push(getRedirectPath(user.role));
     }
     // Check if redirecting from password reset email
     if (searchParams.get('recovery') === 'true') {
@@ -34,13 +40,14 @@ function LoginForm() {
     setSuccessMsg('');
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { data, error } = await signIn(email, password);
 
     if (error) {
       setErrorMsg(error.message || 'Failed to sign in. Please check your credentials.');
       setLoading(false);
     } else {
-      router.push('/profile');
+      const userRole = data?.user?.role;
+      router.push(getRedirectPath(userRole));
     }
   };
 

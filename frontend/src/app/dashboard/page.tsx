@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { fetchMyCases, fetchMyRequests, fetchMyDonations } from '@/lib/api';
-import { MapPin, HelpCircle, Heart, FileText, RefreshCw, ClipboardList, ArrowRight, AlertCircle } from 'lucide-react';
+import { MapPin, HelpCircle, Heart, FileText, RefreshCw, ClipboardList, ArrowRight, AlertCircle, User, Bell, LogOut, CheckCircle2 } from 'lucide-react';
 
 const statusColor: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-600',
@@ -23,14 +23,19 @@ const statusColor: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { user, profile, session, loading: authLoading } = useAuth();
+  const { user, profile, session, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const [cases, setCases] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [donations, setDonations] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'reports' | 'requests' | 'donations'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'requests' | 'donations' | 'notifications'>('reports');
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -68,23 +73,50 @@ export default function Dashboard() {
     );
   }
 
+  const notificationCount = cases.filter(c => c.status !== 'pending').length + requests.filter(r => r.status !== 'pending').length;
+
   const tabs = [
     { key: 'reports' as const, label: 'My Reports', count: cases.length },
     { key: 'requests' as const, label: 'My Requests', count: requests.length },
     { key: 'donations' as const, label: 'My Donations', count: donations.length },
+    { key: 'notifications' as const, label: 'Notifications', count: notificationCount },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 space-y-10">
 
-      {/* Welcome */}
-      <div className="bg-gradient-to-r from-primary/10 to-amber-500/10 border border-primary/10 rounded-3xl p-8 sm:p-10">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-          Welcome back, <span className="text-primary">{profile?.full_name || 'User'}</span>
-        </h1>
-        <p className="text-sm text-muted mt-2">
-          Role: <span className="font-semibold text-foreground capitalize">{profile?.role || 'citizen'}</span> &mdash; Use your dashboard to report, request, and track impact.
-        </p>
+      {/* Welcome & Header Actions */}
+      <div className="bg-gradient-to-r from-primary/10 via-background to-amber-500/10 border border-primary/20 rounded-3xl p-8 sm:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 shadow-xl shadow-foreground/[0.005]">
+        <div>
+          <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-3">
+            <User className="w-3.5 h-3.5" />
+            <span>Citizen Portal</span>
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            Welcome back, <span className="text-primary">{profile?.full_name || 'User'}</span>
+          </h1>
+          <p className="text-sm text-muted mt-1">
+            Role: <span className="font-semibold text-foreground capitalize">{profile?.role || 'citizen'}</span> &mdash; Report cases, track status, and view updates.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/profile"
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl border border-border/80 bg-card hover:bg-border/20 text-sm font-semibold text-foreground transition-all shadow-sm"
+          >
+            <User className="w-4 h-4 text-primary" />
+            <span>My Profile</span>
+          </Link>
+
+          <button
+            onClick={handleSignOut}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-sm font-semibold text-red-500 transition-all shadow-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats + Actions */}
@@ -203,6 +235,65 @@ export default function Dashboard() {
                   </div>
                 </div>
               )))}
+
+              {activeTab === 'notifications' && (
+                <div className="space-y-3">
+                  {cases.length === 0 && requests.length === 0 ? (
+                    <div className="text-center py-12 space-y-3">
+                      <Bell className="w-10 h-10 text-primary/20 mx-auto" />
+                      <p className="text-sm text-muted">No new notifications. When your reports or requests update, you will see them here.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {cases.map((c: any) => (
+                        <div key={`notif-case-${c.id}`} className="bg-card border border-border/40 rounded-2xl p-4 flex items-start space-x-4 shadow-sm">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                            <MapPin className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h5 className="text-sm font-bold text-foreground">Case Status: <span className="capitalize">{c.status?.replace('_', ' ')}</span></h5>
+                              <span className="text-[10px] text-muted">{new Date(c.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-xs text-muted mt-0.5 truncate">{c.description} &bull; {c.location_address}</p>
+                            <div className="mt-2 flex items-center space-x-2">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor[c.status] || 'bg-gray-500/10 text-gray-500'}`}>
+                                {c.status}
+                              </span>
+                              <span className="text-[11px] text-muted">
+                                {c.status === 'resolved' ? 'Volunteer resolved this case successfully.' : c.status === 'assigned' ? 'A volunteer has accepted and is attending this case.' : 'Report received, waiting for nearby volunteer.'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {requests.map((r: any) => (
+                        <div key={`notif-req-${r.id}`} className="bg-card border border-border/40 rounded-2xl p-4 flex items-start space-x-4 shadow-sm">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                            <HelpCircle className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h5 className="text-sm font-bold text-foreground">Assistance Request: <span className="capitalize">{r.type}</span></h5>
+                              <span className="text-[10px] text-muted">{new Date(r.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-xs text-muted mt-0.5 truncate">{r.description}</p>
+                            <div className="mt-2 flex items-center space-x-2">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor[r.status] || 'bg-gray-500/10 text-gray-500'}`}>
+                                {r.status}
+                              </span>
+                              <span className="text-[11px] text-muted">
+                                {r.status === 'fulfilled' ? 'Your request has been fulfilled.' : r.status === 'in_progress' ? 'Volunteer/Admin is processing this request.' : 'Request is pending review.'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

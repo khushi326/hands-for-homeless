@@ -25,12 +25,12 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data?: any; error: any }>;
   signUp: (
     email: string,
     password: string,
     metadata: { full_name: string; phone_number?: string; role: UserRole }
-  ) => Promise<{ error: any }>;
+  ) => Promise<{ data?: any; error: any }>;
   signOut: () => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -81,9 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession({ access_token: data.access_token, user: data.user });
       setUser(data.user);
       setProfile(data.user);
-      return { error: null };
+      return { data: { user: data.user, access_token: data.access_token }, error: null };
     } catch (e: any) {
-      return { error: e };
+      return { data: null, error: e };
     } finally {
       setLoading(false);
     }

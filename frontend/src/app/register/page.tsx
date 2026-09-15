@@ -21,9 +21,15 @@ export default function Register() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getRedirectPath = (r?: string) => {
+    if (r === 'admin') return '/admin';
+    if (r === 'volunteer') return '/volunteer';
+    return '/dashboard';
+  };
+
   useEffect(() => {
     if (user) {
-      router.push('/profile');
+      router.push(getRedirectPath(user.role));
     }
   }, [user, router]);
 
@@ -44,7 +50,7 @@ export default function Register() {
 
     setLoading(true);
 
-    const { error } = await signUp(email, password, {
+    const { data, error } = await signUp(email, password, {
       full_name: fullName,
       phone_number: phoneNumber || undefined,
       role,
@@ -54,15 +60,8 @@ export default function Register() {
       setErrorMsg(error.message || 'Failed to register. Please try again.');
       setLoading(false);
     } else {
-      setSuccessMsg('Registration successful! Please check your email inbox to verify your account.');
-      setLoading(false);
-      // Clear fields
-      setFullName('');
-      setPhoneNumber('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setRole('citizen');
+      const userRole = data?.user?.role || role;
+      router.push(getRedirectPath(userRole));
     }
   };
 
