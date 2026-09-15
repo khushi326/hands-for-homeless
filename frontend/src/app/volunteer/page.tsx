@@ -37,7 +37,10 @@ export default function VolunteerDashboard() {
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
-  }, [user, authLoading, router]);
+    if (!authLoading && profile && profile.role !== 'volunteer' && profile.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [user, profile, authLoading, router]);
 
   const loadData = async () => {
     if (!session?.access_token) return;

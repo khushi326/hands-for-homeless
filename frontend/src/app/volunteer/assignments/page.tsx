@@ -21,7 +21,7 @@ const statusOptions = [
 ];
 
 function AssignmentsContent() {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, profile, session, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightId = searchParams.get('id');
@@ -35,7 +35,10 @@ function AssignmentsContent() {
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
-  }, [user, authLoading, router]);
+    if (!authLoading && profile && profile.role !== 'volunteer' && profile.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [user, profile, authLoading, router]);
 
   const loadData = async () => {
     if (!session?.access_token) return;

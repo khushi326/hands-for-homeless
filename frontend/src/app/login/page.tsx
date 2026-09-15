@@ -4,13 +4,14 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { LogIn, KeyRound, Mail, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { LogIn, KeyRound, Mail, User as UserIcon, AlertCircle, CheckCircle2, RefreshCw, Shield, Info } from 'lucide-react';
 
 function LoginForm() {
   const { user, signIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -38,17 +39,40 @@ function LoginForm() {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+
+    // Input Validations
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail) {
+      setErrorMsg('Please enter your email address.');
+      return;
+    }
+
+    if (!cleanPassword) {
+      setErrorMsg('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
 
-    const { data, error } = await signIn(email, password);
+    const { data, error } = await signIn(cleanEmail, cleanPassword);
 
     if (error) {
-      setErrorMsg(error.message || 'Failed to sign in. Please check your credentials.');
+      setErrorMsg('Invalid email or password. Please check your credentials.');
       setLoading(false);
     } else {
       const userRole = data?.user?.role;
       router.push(getRedirectPath(userRole));
     }
+  };
+
+  // Quick fill helper for demo evaluation
+  const setDemoCredentials = (demoEmail: string, demoUsername: string) => {
+    setEmail(demoEmail);
+    setUsername(demoUsername);
+    setPassword('admin123');
+    setErrorMsg('');
   };
 
   return (
@@ -60,7 +84,7 @@ function LoginForm() {
           Welcome Back
         </h2>
         <p className="text-sm text-muted">
-          Sign in to access your HFH dashboard
+          Sign in to access your HFH role dashboard
         </p>
       </div>
 
@@ -80,12 +104,31 @@ function LoginForm() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-4">
           
+          {/* Username (Optional / Profile Identifier) */}
+          <div className="space-y-2">
+            <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Username / Name <span className="text-[10px] text-muted font-normal">(Optional)</span>
+            </label>
+            <div className="relative">
+              <UserIcon className="absolute left-3.5 top-3.5 w-4 h-4 text-muted" />
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. admin or khushi"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-border/60 bg-transparent text-sm focus:outline-none focus:border-primary/80 focus:ring-1 focus:ring-primary/40 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Email Address */}
           <div className="space-y-2">
             <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Email Address
+              Email Address <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-muted" />
@@ -101,10 +144,11 @@ function LoginForm() {
             </div>
           </div>
 
+          {/* Password */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <Link
                 href="/forgot-password"
@@ -139,10 +183,41 @@ function LoginForm() {
         </button>
       </form>
 
+      {/* Demo Credentials Quick Switcher */}
+      <div className="p-4 rounded-2xl bg-muted/20 border border-border/50 space-y-2.5">
+        <div className="flex items-center space-x-1.5 text-xs font-bold text-foreground">
+          <Info className="w-3.5 h-3.5 text-primary" />
+          <span>Quick Demo Logins (Password: admin123)</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setDemoCredentials('citizen@test.com', 'citizen')}
+            className="p-2 rounded-lg bg-card border border-border/60 hover:border-primary text-center font-medium text-foreground transition-all"
+          >
+            Citizen
+          </button>
+          <button
+            type="button"
+            onClick={() => setDemoCredentials('volunteer@test.com', 'volunteer')}
+            className="p-2 rounded-lg bg-card border border-border/60 hover:border-blue-500 text-center font-medium text-foreground transition-all"
+          >
+            Volunteer
+          </button>
+          <button
+            type="button"
+            onClick={() => setDemoCredentials('admin@test.com', 'admin')}
+            className="p-2 rounded-lg bg-card border border-border/60 hover:border-rose-500 text-center font-medium text-foreground transition-all"
+          >
+            Admin
+          </button>
+        </div>
+      </div>
+
       {/* Footer */}
-      <div className="text-center pt-4">
+      <div className="text-center pt-2">
         <p className="text-sm text-muted">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link
             href="/register"
             className="font-bold text-primary hover:text-primary-hover"
